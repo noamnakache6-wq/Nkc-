@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Suivi Étude">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="msapplication-navbutton-color" content="#0a0a0f">
+<title>Suivi Étude</title>
+
+<!-- Inline SVG icon as apple-touch-icon -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMGEwYTBmIi8+PHRleHQgeD0iOTAiIHk9IjExNSIgZm9udC1zaXplPSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+TljwvdGV4dD48L3N2Zz4=">
+
+<script>
+// Inline Web App Manifest
+const manifest = {
+  name: "Suivi Étude",
+  short_name: "Étude",
+  description: "Tracker de sessions d'étude avec pauses",
+  start_url: ".",
+  display: "standalone",
+  background_color: "#0a0a0f",
+  theme_color: "#0a0a0f",
+  icons: [{
+    src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMGEwYTBmIi8+PHRleHQgeD0iOTAiIHk9IjExNSIgZm9udC1zaXplPSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+TljwvdGV4dD48L3N2Zz4=",
+    sizes: "180x180",
+    type: "image/svg+xml"
+  }]
+};
+const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+const mLink = document.createElement('link');
+mLink.rel = 'manifest';
+mLink.href = URL.createObjectURL(blob);
+document.head.appendChild(mLink);
+</script>
+
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --border: #1e1e2e;
+    --accent: #6366f1;
+    --green: #22c55e;
+    --green-dim: #16a34a;
+    --orange: #f59e0b;
+    --orange-dim: #d97706;
+    --red: #ef4444;
+    --text: #e2e2ef;
+    --dim: #8888a0;
+    --muted: #555570;
+    --surface: #18182a;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    padding: calc(12px + var(--safe-top)) 14px calc(12px + var(--safe-bottom));
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .header-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .header-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-sub { font-size: 11px; color: var(--dim); }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* Status */
+  .status { text-align: center; padding: 8px; transition: all 0.3s; }
+  .status.active { background: #081a0f; border-color: #0e3d1c; }
+  .status.paused { background: #1a1508; border-color: #3d2e08; }
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; vertical-align: middle;
+  }
+  .status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  .status-dot.pause { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+  .status-label { font-weight: 700; font-size: 13px; }
+  .status-name { font-size: 16px; font-weight: 700; margin: 6px 0; }
+  .status-meta { font-size: 12px; color: var(--dim); display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+  /* Stats grid */
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px; text-align: center;
+  }
+  .stat-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.8px; }
+  .stat-val { font-size: 17px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+  /* Inputs */
+  input, textarea {
+    width: 100%; padding: 11px 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: inherit; font-size: 14px;
+    outline: none; margin-bottom: 8px;
+    -webkit-appearance: none;
+  }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  textarea { min-height: 50px; resize: vertical; }
+  input:focus, textarea:focus { border-color: var(--accent); }
+
+  /* Buttons */
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn {
+    border: none; border-radius: 10px;
+    padding: 12px 10px; font-family: inherit;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; text-align: center;
+    transition: all 0.12s; -webkit-appearance: none;
+  }
+  .btn:active { transform: scale(0.96); opacity: 0.85; }
+  .btn-start { background: var(--green); color: #fff; }
+  .btn-pause { background: var(--orange); color: #fff; }
+  .btn-resume { background: var(--accent); color: #fff; }
+  .btn-stop { background: var(--red); color: #fff; }
+  .btn:disabled { background: var(--surface) !important; color: var(--muted) !important; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .tab {
+    flex: 1; border: none; border-radius: 10px;
+    padding: 10px; font-family: inherit; font-size: 12px;
+    font-weight: 600; cursor: pointer; text-align: center;
+    background: var(--surface); color: var(--dim);
+    transition: all 0.15s; -webkit-appearance: none;
+  }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab:active { transform: scale(0.97); }
+
+  /* Session rows */
+  .session-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .session-row:last-child { border-bottom: none; }
+  .s-name { font-weight: 600; font-size: 13px; }
+  .s-meta { font-size: 11px; color: var(--dim); margin-top: 2px; }
+  .s-work { font-weight: 800; color: var(--green); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .s-pause { font-size: 11px; color: var(--orange-dim); }
+
+  /* Log */
+  .log-item {
+    padding: 5px 0; border-bottom: 1px solid var(--border);
+    font-size: 11px; color: var(--dim);
+    font-family: "SF Mono", "Menlo", monospace;
+  }
+  .log-item.success { color: var(--green); }
+
+  /* Note row */
+  .note-row {
+    padding: 5px 0; border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .note-time { color: var(--muted); font-size: 11px; }
+
+  /* Footer buttons */
+  .footer-btn {
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); border-radius: 10px;
+    padding: 10px 16px; font-family: inherit;
+    font-size: 11px; font-weight: 600;
+    cursor: pointer; -webkit-appearance: none;
+  }
+  .footer-btn:active { opacity: 0.7; }
+
+  .confirm-reset {
+    border-color: var(--red); padding: 14px; text-align: center;
+  }
+  .confirm-reset p { color: var(--red); font-weight: 700; margin-bottom: 10px; }
+  .confirm-btns { display: flex; gap: 8px; justify-content: center; }
+  .confirm-yes { background: var(--red); color: #fff; border: none; border-radius: 8px; padding: 10px 18px; font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .confirm-no { background: var(--surface); color: var(--dim); border: none; border-radius: 8px; padding: 10px 18px; font-family: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
+
+  .empty { color: var(--dim); text-align: center; padding: 24px 10px; }
+
+  /* Install banner */
+  .install-banner {
+    background: var(--surface);
+    border: 1px dashed var(--accent);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    display: none;
+  }
+  .install-banner b { color: var(--accent); }
+  .install-dismiss {
+    background: none; border: none; color: var(--muted);
+    font-size: 11px; cursor: pointer; margin-top: 6px;
+    text-decoration: underline; font-family: inherit;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">📖</div>
+    <div>
+      <div class="header-title">Suivi Étude</div>
+      <div class="header-sub">Dossiers · Pauses · Progression</div>
+    </div>
+  </div>
+
+  <!-- Install hint -->
+  <div class="install-banner" id="installBanner">
+    📲 <b>Ajouter à l'écran d'accueil</b> pour une expérience app complète !<br>
+    <span id="installHint"></span>
+    <br><button class="install-dismiss" onclick="dismissInstall()">OK, compris</button>
+  </div>
+
+  <!-- Status -->
+  <div class="card status" id="statusCard">
+    <div class="empty">Aucune session active</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Travail</div>
+      <div class="stat-val" id="statWork" style="color:var(--green)">0h 00min</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Pauses</div>
+      <div class="stat-val" id="statPause" style="color:var(--orange)">0h 00min</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Dossiers</div>
+      <div class="stat-val" id="statCount" style="color:var(--accent)">0</div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="card">
+    <input type="text" id="inputName" placeholder="Nom du dossier (ex: DCG 3 — Ch. 22)" autocomplete="off">
+    <textarea id="inputNote" placeholder="Note d'avancement (optionnelle)" rows="2"></textarea>
+    <div class="btns">
+      <button class="btn btn-start" id="btnStart">🚀 Démarrer</button>
+      <button class="btn btn-pause" id="btnPause" disabled>⏸ Pause</button>
+      <button class="btn btn-resume" id="btnResume" disabled>▶ Reprendre</button>
+      <button class="btn btn-stop" id="btnStop" disabled>✅ Terminer</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="dossiers">Dossiers</button>
+    <button class="tab" data-tab="details">Détails</button>
+    <button class="tab" data-tab="journal">Journal</button>
+  </div>
+
+  <!-- Tab: Dossiers -->
+  <div class="card tab-content" id="tabDossiers"></div>
+  <!-- Tab: Details -->
+  <div class="card tab-content" id="tabDetails" style="display:none"></div>
+  <!-- Tab: Journal -->
+  <div class="card tab-content" id="tabJournal" style="display:none"></div>
+
+  <!-- Footer -->
+  <div style="text-align:center;margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <button class="footer-btn" onclick="exportData()">📁 Exporter JSON</button>
+    <button class="footer-btn" id="btnReset" onclick="showReset()">🗑 Réinitialiser</button>
+  </div>
+  <div class="card confirm-reset" id="confirmReset" style="display:none;margin-top:12px;">
+    <p>⚠️ Supprimer TOUTES les données ?</p>
+    <div class="confirm-btns">
+      <button class="confirm-yes" onclick="resetAll()">Oui, tout effacer</button>
+      <button class="confirm-no" onclick="hideReset()">Annuler</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SK = "etudePauseTracker_v2";
+let sessions = [], current = null, logs = [], activeTab = "dossiers";
+
+// ─── Persistence ───
+function save() { localStorage.setItem(SK, JSON.stringify({ sessions, current, logs })); }
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SK));
+    if (d) { sessions = d.sessions || []; current = d.current || null; logs = d.logs || []; }
+  } catch(e) {}
+}
+
+// ─── Format ───
+function fmtD(ms) {
+  if (!ms || ms < 1000) return "0s";
+  const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if (h > 0) return h + "h" + String(m).padStart(2,"0") + "min";
+  if (m > 0) return m + "min " + sec + "s";
+  return sec + "s";
+}
+function fmtHM(ms) {
+  if (!ms || ms < 1000) return "0h 00min";
+  const s = Math.floor(ms/1000);
+  return Math.floor(s/3600) + "h " + String(Math.floor((s%3600)/60)).padStart(2,"0") + "min";
+}
+function tStr(ts) { return new Date(ts).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
+function dStr(ts) { return new Date(ts).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"}); }
+
+// ─── Log ───
+function addLog(msg, type="info") {
+  logs.unshift({ time: Date.now(), text: "[" + tStr(Date.now()) + "] " + msg, type });
+  if (logs.length > 200) logs.pop();
+  save();
+}
+
+// ─── Live values ───
+function liveWork() {
+  let t = sessions.reduce((a,s) => a + (s.workMs||0), 0);
+  if (current) { t += current.workedMs||0; if (!current.isPaused && current.startTime) t += Date.now()-current.startTime; }
+  return t;
+}
+function livePause() {
+  let t = sessions.reduce((a,s) => a + (s.pauseMs||0), 0);
+  if (current) { t += current.pauseMs||0; if (current.isPaused && current.pauseStart) t += Date.now()-current.pauseStart; }
+  return t;
+}
+function curWork() {
+  if (!current) return 0;
+  let t = current.workedMs||0;
+  if (!current.isPaused && current.startTime) t += Date.now()-current.startTime;
+  return t;
+}
+function curPause() {
+  if (!current) return 0;
+  let t = current.pauseMs||0;
+  if (current.isPaused && current.pauseStart) t += Date.now()-current.pauseStart;
+  return t;
+}
+
+// ─── Actions ───
+function startDossier() {
+  let name = document.getElementById("inputName").value.trim();
+  const note = document.getElementById("inputNote").value.trim();
+  if (!name) name = "Sans titre " + tStr(Date.now());
+  if (current) { if (!confirm("Session en cours. La terminer ?")) return; finalize(); }
+  const now = Date.now();
+  current = {
+    id: "s_"+now+"_"+Math.random().toString(36).slice(2,7),
+    name, startTime: now, sessionStart: now,
+    workedMs: 0, pauseMs: 0, isPaused: false, pauseStart: null,
+    pauses: [], notes: [{ ts: now, text: note || "Début" }], lastNote: note || "Début"
+  };
+  document.getElementById("inputName").value = "";
+  document.getElementById("inputNote").value = "";
+  addLog("🚀 Démarrage : \"" + name + "\"");
+  save(); render();
+}
+
+function pauseSession() {
+  if (!current || current.isPaused) return;
+  const note = document.getElementById("inputNote").value.trim() || "Pause";
+  document.getElementById("inputNote").value = "";
+  const now = Date.now();
+  current.workedMs += now - current.startTime;
+  current.startTime = null;
+  current.isPaused = true;
+  current.pauseStart = now;
+  current.lastNote = note;
+  current.notes.push({ ts: now, text: "Pause — " + note });
+  current.pauses.push({ start: now, end: null, note });
+  addLog("⏸️ Pause : " + current.name + " — " + note);
+  save(); render();
+}
+
+function resumeSession() {
+  if (!current || !current.isPaused) return;
+  const now = Date.now();
+  const dur = now - current.pauseStart;
+  current.pauseMs += dur;
+  const last = current.pauses[current.pauses.length-1];
+  if (last && !last.end) { last.end = now; last.durationMs = dur; }
+  current.isPaused = false;
+  current.startTime = now;
+  current.pauseStart = null;
+  const rNote = document.getElementById("inputNote").value.trim();
+  document.getElementById("inputNote").value = "";
+  if (rNote) { current.lastNote = rNote; current.notes.push({ ts: now, text: "Reprise — " + rNote }); }
+  else { current.notes.push({ ts: now, text: "Reprise (" + fmtD(dur) + ")" }); }
+  addLog("▶️ Reprise après " + fmtD(dur) + " : " + current.name);
+  save(); render();
+}
+
+function finalize() {
+  if (!current) return;
+  const now = Date.now();
+  let w = current.workedMs||0, p = current.pauseMs||0;
+  if (!current.isPaused && current.startTime) w += now - current.startTime;
+  if (current.isPaused && current.pauseStart) p += now - current.pauseStart;
+  sessions.push({
+    id: current.id, name: current.name, createdAt: current.sessionStart,
+    finishedAt: now, workMs: w, pauseMs: p,
+    pauses: current.pauses, notes: current.notes
+  });
+  addLog("✅ Terminé : \"" + current.name + "\" — " + fmtD(w) + " travail, " + fmtD(p) + " pause", "success");
+  current = null;
+  save(); render();
+}
+
+function closeDossier() { if (current) finalize(); }
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ sessions, current, logs, exportDate: new Date().toISOString() }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "suivi_etude_" + new Date().toISOString().slice(0,19).replace(/:/g,"-") + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  addLog("📁 Export effectué");
+}
+
+function showReset() { document.getElementById("confirmReset").style.display = "block"; }
+function hideReset() { document.getElementById("confirmReset").style.display = "none"; }
+function resetAll() {
+  sessions = []; current = null; logs = [];
+  localStorage.removeItem(SK);
+  hideReset(); render();
+}
+
+// ─── Render ───
+function render() {
+  // Status
+  const sc = document.getElementById("statusCard");
+  if (!current) {
+    sc.className = "card status";
+    sc.innerHTML = '<div class="empty">Aucune session active</div>';
+  } else {
+    sc.className = "card status " + (current.isPaused ? "paused" : "active");
+    sc.innerHTML = '<div><span class="status-dot ' + (current.isPaused ? "pause" : "live") + '"></span>'
+      + '<span class="status-label">' + (current.isPaused ? "EN PAUSE" : "EN COURS") + '</span></div>'
+      + '<div class="status-name">' + current.name + '</div>'
+      + '<div class="status-meta"><span>⏱ ' + fmtD(curWork()) + '</span><span>☕ ' + fmtD(curPause()) + '</span><span>📝 ' + (current.lastNote||"") + '</span></div>';
+  }
+
+  // Stats
+  document.getElementById("statWork").textContent = fmtHM(liveWork());
+  document.getElementById("statPause").textContent = fmtHM(livePause());
+  document.getElementById("statCount").textContent = sessions.length + (current ? 1 : 0);
+
+  // Buttons
+  document.getElementById("btnPause").disabled = !current || current.isPaused;
+  document.getElementById("btnResume").disabled = !current || !current.isPaused;
+  document.getElementById("btnStop").disabled = !current;
+
+  // Dossiers tab
+  const dTab = document.getElementById("tabDossiers");
+  const all = [];
+  if (current) all.push({ name: current.name, workMs: curWork(), pauseMs: curPause(), pauses: current.pauses, createdAt: current.sessionStart, finishedAt: null, active: true });
+  sessions.slice().reverse().forEach(s => all.push(s));
+  if (all.length === 0) {
+    dTab.innerHTML = '<div class="empty">Aucun dossier</div>';
+  } else {
+    dTab.innerHTML = all.map(s =>
+      '<div class="session-row"><div style="flex:1"><div class="s-name">'
+      + (s.active ? '<span class="status-dot live" style="width:6px;height:6px;margin-right:4px;vertical-align:middle;display:inline-block"></span>' : '')
+      + s.name + '</div><div class="s-meta">' + dStr(s.createdAt||Date.now()) + ' · ' + (s.pauses?.length||0) + ' pause' + ((s.pauses?.length||0)>1?'s':'')
+      + (s.finishedAt ? ' · Terminé ' + tStr(s.finishedAt) : ' · En cours') + '</div></div>'
+      + '<div style="text-align:right"><div class="s-work">' + fmtD(s.workMs) + '</div><div class="s-pause">☕ ' + fmtD(s.pauseMs) + '</div></div></div>'
+    ).join("");
+  }
+
+  // Details tab
+  const dtTab = document.getElementById("tabDetails");
+  let dtHTML = "";
+  if (current && current.notes?.length) {
+    dtHTML += '<div style="font-weight:700;color:var(--accent);margin-bottom:8px">' + current.name + ' — Notes</div>';
+    dtHTML += current.notes.map(n => '<div class="note-row"><span class="note-time">' + tStr(n.ts) + '</span> ' + n.text + '</div>').join("");
+  }
+  if (sessions.length > 0) {
+    dtHTML += '<div style="font-weight:700;color:var(--dim);margin-top:14px;margin-bottom:8px">Sessions passées</div>';
+    sessions.slice().reverse().forEach(s => {
+      dtHTML += '<div style="margin-bottom:12px"><div style="font-weight:600;font-size:12px;margin-bottom:3px">' + s.name + ' — ' + fmtD(s.workMs) + '</div>';
+      if (s.notes) s.notes.forEach(n => { dtHTML += '<div style="font-size:11px;color:var(--dim);padding-left:8px;line-height:1.6">' + tStr(n.ts) + ' · ' + n.text + '</div>'; });
+      dtHTML += '</div>';
+    });
+  }
+  dtTab.innerHTML = dtHTML || '<div class="empty">Démarre un dossier pour voir les détails</div>';
+
+  // Journal tab
+  const jTab = document.getElementById("tabJournal");
+  if (logs.length === 0) {
+    jTab.innerHTML = '<div class="empty">Aucun événement</div>';
+  } else {
+    jTab.innerHTML = logs.map(l => '<div class="log-item' + (l.type==="success"?" success":"") + '">' + l.text + '</div>').join("");
+  }
+}
+
+// ─── Tabs ───
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    activeTab = t.dataset.tab;
+    document.getElementById("tabDossiers").style.display = activeTab === "dossiers" ? "" : "none";
+    document.getElementById("tabDetails").style.display = activeTab === "details" ? "" : "none";
+    document.getElementById("tabJournal").style.display = activeTab === "journal" ? "" : "none";
+  });
+});
+
+// ─── Buttons ───
+document.getElementById("btnStart").addEventListener("click", startDossier);
+document.getElementById("btnPause").addEventListener("click", pauseSession);
+document.getElementById("btnResume").addEventListener("click", resumeSession);
+document.getElementById("btnStop").addEventListener("click", closeDossier);
+
+// ─── Install banner ───
+function showInstallBanner() {
+  if (localStorage.getItem("installDismissed")) return;
+  // Only show if NOT in standalone mode
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
+  const banner = document.getElementById("installBanner");
+  const hint = document.getElementById("installHint");
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua)) {
+    hint.innerHTML = 'Safari → <b>Partager ⬆️</b> → <b>Sur l\'écran d\'accueil</b>';
+  } else if (/Android/.test(ua)) {
+    hint.innerHTML = 'Chrome → <b>⋮ Menu</b> → <b>Ajouter à l\'écran d\'accueil</b>';
+  } else {
+    hint.innerHTML = 'Chrome → <b>⋮</b> → <b>Installer l\'application</b>';
+  }
+  banner.style.display = "block";
+}
+function dismissInstall() {
+  document.getElementById("installBanner").style.display = "none";
+  localStorage.setItem("installDismissed", "1");
+}
+
+// ─── Init ───
+load();
+render();
+showInstallBanner();
+setInterval(render, 1000);
+</script>
+</body>
+</html>
