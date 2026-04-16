@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Suivi Étude">
+<meta name="apple-mobile-web-app-title" content="Nkc">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0a0a0f">
 <meta name="msapplication-navbutton-color" content="#0a0a0f">
-<title>Suivi Étude</title>
+<title>Nkc</title>
 
 <!-- Inline SVG icon as apple-touch-icon -->
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMGEwYTBmIi8+PHRleHQgeD0iOTAiIHk9IjExNSIgZm9udC1zaXplPSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+TljwvdGV4dD48L3N2Zz4=">
@@ -17,8 +17,8 @@
 <script>
 // Inline Web App Manifest
 const manifest = {
-  name: "Suivi Étude",
-  short_name: "Étude",
+  name: "Nkc",
+  short_name: "Nkc",
   description: "Tracker de sessions d'étude avec pauses",
   start_url: ".",
   display: "standalone",
@@ -235,7 +235,7 @@ document.head.appendChild(mLink);
   <div class="header">
     <div class="header-icon">📖</div>
     <div>
-      <div class="header-title">Suivi Étude</div>
+      <div class="header-title">Nkc</div>
       <div class="header-sub">Dossiers · Pauses · Progression</div>
     </div>
   </div>
@@ -444,7 +444,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify({ sessions, current, logs, exportDate: new Date().toISOString() }, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "suivi_etude_" + new Date().toISOString().slice(0,19).replace(/:/g,"-") + ".json";
+  a.download = "nkc_" + new Date().toISOString().slice(0,19).replace(/:/g,"-") + ".json";
   a.click(); URL.revokeObjectURL(a.href);
   addLog("📁 Export effectué");
 }
